@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCOUNT_ID = '241533118928'
-        AWS_REGION     = 'us-east-1'
-        IMAGE_REPO     = 'my-devops-app'
-        IMAGE_TAG      = "${env.BUILD_NUMBER}"
-        ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        EC2_INSTANCE_ID = 'i-04d9dbcba5a128abd'   // ← your EC2 instance ID
+        AWS_ACCOUNT_ID  = '241533118928'
+        AWS_REGION      = 'us-east-1'
+        IMAGE_REPO      = 'my-devops-app'
+        IMAGE_TAG       = "${env.BUILD_NUMBER}"
+        ECR_URL         = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        EC2_INSTANCE_ID = 'i-04d9dbcba5a128abd'
     }
 
     stages {
@@ -21,8 +21,8 @@ pipeline {
         stage('Test & Lint') {
             steps {
                 sh '''
-                    pip install flake8 --break-system-packages || pip install flake8
-                    flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics
+                    pip install flake8
+                    python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics
                 '''
                 echo "✅ Code Quality Check Passed!"
             }
@@ -77,7 +77,6 @@ pipeline {
             echo "❌ Pipeline failed at build #${env.BUILD_NUMBER}. Check logs."
         }
         always {
-            // Clean up local docker images to save disk space
             sh """
                 docker rmi ${IMAGE_REPO}:${IMAGE_TAG} || true
                 docker rmi ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG} || true
