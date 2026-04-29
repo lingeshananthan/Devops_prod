@@ -20,9 +20,17 @@ pipeline {
         stage('Test & Lint') {
             steps {
                 script {
-                    echo "Running Code Quality Checks..."
-                    sh "python3 -m pip install flake8 --break-system-packages"
-                    sh "python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics"  // ✅ Fixed
+                    echo "Creating Virtual Environment and Running Lint..."
+                    sh """
+                        # 1. Create the virtual environment
+                        python3 -m venv venv
+                        
+                        # 2. Install flake8 inside the venv
+                        ./venv/bin/pip install flake8
+                        
+                        # 3. Run the linting test using the venv version of flake8
+                        ./venv/bin/flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics
+                    """
                     echo "Tests Passed!"
                 }
             }
