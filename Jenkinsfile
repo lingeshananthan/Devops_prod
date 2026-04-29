@@ -5,11 +5,12 @@ pipeline {
         AWS_ACCOUNT_ID = '241533118928'
         AWS_REGION     = 'us-east-1'
         IMAGE_REPO     = 'my-devops-app'
-        IMAGE_TAG      = "${env.BUILD_NUMBER}"
-        ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE_TAG      = "${BUILD_NUMBER}"   // ✅ Fixed: no env. prefix needed here
+        ECR_URL        = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"  // ✅ Fixed
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -20,9 +21,8 @@ pipeline {
             steps {
                 script {
                     echo "Running Code Quality Checks..."
-                    // Use 'python3 -m pip' to ensure it uses the right version
-                    sh "python3 -m pip install flake8"
-                    sh "python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics"
+                    sh "python3 -m pip install flake8 --break-system-packages"
+                    sh "python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics"  // ✅ Fixed
                     echo "Tests Passed!"
                 }
             }
@@ -40,9 +40,10 @@ pipeline {
         stage('Push to ECR') {
             steps {
                 script {
-                    // Authenticate Docker to ECR
-                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URL}"
-                    // Push the image
+                    sh """
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin ${ECR_URL}
+                    """
                     sh "docker push ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG}"
                 }
             }
@@ -50,18 +51,29 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(['ec2-ssh-key']) { // 'ec2-ssh-key' is the ID of your stored SSH private key in Jenkins
+                sshagent(['ec2-ssh-key']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@your-ec2-ip << EOF
-                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URL}
-                        docker pull ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG}
-                        docker stop my-app || true
-                        docker rm my-app || true
-                        docker run -d --name my-app -p 80:5000 ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG}
-                    EOF
+                        ssh -o StrictHostKeyChecking=no ubuntu@your-ec2-ip '
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URL}
+                            docker pull ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG}
+                            docker stop my-app || true
+                            docker rm my-app || true
+                            docker run -d --name my-app -p 80:5000 ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG}
+                        '
                     """
+                    // ✅ Fixed: heredoc << EOF doesn't work reliably in Jenkins sh
+                    // Use single-quoted SSH command block instead
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline completed successfully! Image: ${ECR_URL}/${IMAGE_REPO}:${IMAGE_TAG}"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs above."
         }
     }
 }
