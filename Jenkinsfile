@@ -20,12 +20,10 @@ pipeline {
             steps {
                 script {
                     echo "Running Code Quality Checks..."
-                    
-                    sh "pip install flake8"                  
-                    
-                    sh "flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics"
-                    
-                    echo "Tests Passed! Code is clean."
+                    // Use 'python3 -m pip' to ensure it uses the right version
+                    sh "python3 -m pip install flake8"
+                    sh "python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics"
+                    echo "Tests Passed!"
                 }
             }
         }
