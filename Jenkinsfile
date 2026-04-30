@@ -21,7 +21,13 @@ pipeline {
         stage('Test & Lint') {
             steps {
                 sh '''
+                    # Ensure pip is available and install flake8
                     python3 -m pip install --user flake8
+            
+                    # Add the local user bin to the PATH for this session
+                    export PATH=$PATH:/var/lib/jenkins/.local/bin
+            
+                    # Run the linting check
                     python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics
                 '''
                 echo "✅ Code Quality Check Passed!"
