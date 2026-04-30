@@ -21,7 +21,7 @@ pipeline {
         stage('Test & Lint') {
             steps {
                 sh '''
-                    pip install flake8
+                    python3 -m pip install --user flake8
                     python3 -m flake8 app.py --count --select=E9,F63,F7,F82 --show-source --statistics
                 '''
                 echo "✅ Code Quality Check Passed!"
