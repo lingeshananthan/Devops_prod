@@ -7,7 +7,7 @@ pipeline {
         IMAGE_REPO      = 'my-devops-app'
         IMAGE_TAG       = "${env.BUILD_NUMBER}"
         ECR_URL         = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        EC2_INSTANCE_ID = 'i-04d9dbcba5a128abd'
+        EC2_INSTANCE_ID = 'i-0cc717965496f7125'
     }
 
     stages {
